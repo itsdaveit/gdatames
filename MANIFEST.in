@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include gdatames *.css
+recursive-include gdatames *.csv
+recursive-include gdatames *.html
+recursive-include gdatames *.ico
+recursive-include gdatames *.js
+recursive-include gdatames *.json
+recursive-include gdatames *.md
+recursive-include gdatames *.png
+recursive-include gdatames *.py
+recursive-include gdatames *.svg
+recursive-include gdatames *.txt
+recursive-exclude gdatames *.pyc
