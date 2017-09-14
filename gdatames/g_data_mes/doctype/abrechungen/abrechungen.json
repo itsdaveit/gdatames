@@ -9,7 +9,7 @@
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
- "document_type": "", 
+ "document_type": "Document", 
  "editable_grid": 1, 
  "engine": "InnoDB", 
  "fields": [
@@ -235,7 +235,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2017-09-13 23:56:23.643120", 
+ "modified": "2017-09-14 17:53:32.587199", 
  "modified_by": "Administrator", 
  "module": "G Data MES", 
  "name": "Abrechungen", 
