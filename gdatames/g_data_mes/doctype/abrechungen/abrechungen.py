@@ -74,7 +74,8 @@ class Abrechungen(Document):
 									#"against_income_account" : "Vertrieb - IG",
 									"status": "Draft"})
 
-			sales_invoice_doc.append("items", sales_invoice_item)
+			for i in range(50):
+				sales_invoice_doc.append("items", sales_invoice_item)
 			sales_invoice_doc.insert()
 		else:
 			frappe.throw('Management Server ID ' + mes_id + ' nich einmalig.')
