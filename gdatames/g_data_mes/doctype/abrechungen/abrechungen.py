@@ -21,7 +21,7 @@ class Abrechungen(Document):
 		mes_xml = zip_xml_content[0]
 		self.xml_data = mes_xml
 		xml_et = ET.fromstring(self.xml_data)
-		date = re.search('(?<=private/files/)(\d\d)_(\d\d\d\d)_mes_usage_export.zip', gdata_zipfile)
+		date = re.search('(?<=files/)(\d\d)_(\d\d\d\d)_mes_usage_export.zip', gdata_zipfile)
 		invoice_month = date.group(1)
 		invoice_year = date.group(2)
 		reportentrys = xml_et.findall('ReportEntry')
@@ -40,9 +40,10 @@ class Abrechungen(Document):
 				log = log + 'Gesamtanzahl reporterter Clients: ' + reportentry.attrib['MaxActiveClients'] + '\n'
 				managementservers = reportentry.findall('ManagementServer')
 				for managementserver in managementservers:
+					mes_id_upper = managementserver.attrib['id'].upper()
 					log = log + 'Server mit ID: ' + managementserver.attrib['id'] + ' mit ' + managementserver.attrib['MaxActiveClients'] + ' aktiven Clients gefunden.\n'
 					counter_MaxActiveClients = counter_MaxActiveClients + int(managementserver.attrib['MaxActiveClients'])
-					self.create_mes_invoice(managementserver.attrib['id'], managementserver.attrib['MaxActiveClients'], invoice_month, invoice_year )
+					self.create_mes_invoice(mes_id_upper, managementserver.attrib['MaxActiveClients'], invoice_month, invoice_year )
 				log = log + 'Gesamtanzahl Clients gezählt: ' + str(counter_MaxActiveClients)
 			self.log = log
 		else:
@@ -74,8 +75,8 @@ class Abrechungen(Document):
 									#"against_income_account" : "Vertrieb - IG",
 									"status": "Draft"})
 
-			for i in range(50):
-				sales_invoice_doc.append("items", sales_invoice_item)
+			#for i in range(50):
+			sales_invoice_doc.append("items", sales_invoice_item)
 			sales_invoice_doc.insert()
 		else:
 			frappe.throw('Management Server ID ' + mes_id + ' nich einmalig.')
