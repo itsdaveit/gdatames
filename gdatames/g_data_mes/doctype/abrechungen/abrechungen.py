@@ -24,6 +24,7 @@ class Abrechungen(Document):
 		date = re.search('(?<=files/)(\d\d)_(\d\d\d\d)_mes_usage_export.zip', gdata_zipfile)
 		invoice_month = date.group(1)
 		invoice_year = date.group(2)
+		self.month = invoice_month + "." + invoice_year
 		reportentrys = xml_et.findall('ReportEntry')
 		#Momentan ist die Verarbeitung auf einen Report pro XML Datei begrenzt.
 		if len(reportentrys) == 1:
@@ -46,11 +47,14 @@ class Abrechungen(Document):
 					self.create_mes_invoice(mes_id_upper, managementserver.attrib['MaxActiveClients'], invoice_month, invoice_year )
 				log = log + 'Gesamtanzahl Clients gezählt: ' + str(counter_MaxActiveClients)
 			self.log = log
+			self.status = "Ausgangsrechnungen erstellt"
+			self.save()
 		else:
 			msgprint('Keinen oder mehr als ein ReportEntry im XML-Code gefunden, breche ab.')
 
 
 	def create_mes_invoice(self, mes_id, max_active_clients, invoice_month, invoice_year):
+		GDATAMES_Settings = frappe.get_doc("GDATAMES Settings")
 		management_server = frappe.get_all('Management Server', {"management_server_id": mes_id})
 		if len(management_server) == 0:
 			frappe.throw('Management Server ID ' + mes_id + ' nicht gefunden.')
@@ -61,23 +65,26 @@ class Abrechungen(Document):
 			sales_invoice_item = frappe.get_doc({"doctype": "Sales Invoice Item",
 									"item_code": item.name,
 									"qty": int(max_active_clients),
-									#"item_name": item.name,
-									#"conversion_factor": 1,
-									#"uom": item.stock_uom,
-									#"description": item.description,
-									#"income_account": item.income_account
 									})
 
-			print item.name
+			introduction_text = GDATAMES_Settings.introduction_text + "<div><br></div><div>Leistungszeitraum " + invoice_month + "." + invoice_year + "<br>Ihre Management Server ID: " + mes_id + "</div>"
+
 			sales_invoice_doc = frappe.get_doc({"doctype": "Sales Invoice",
-									"title": "G Data MES Abrechung " + invoice_month + "." + invoice_year,
+									"title": "MES " + invoice_month + "." + invoice_year + " " + frappe.get_doc("Customer", doc_management_server.customer).customer_name,
 									"customer": doc_management_server.customer,
-									#"against_income_account" : "Vertrieb - IG",
-									"status": "Draft"})
+									"status": "Draft",
+									"payment_terms_template": GDATAMES_Settings.payment_terms_template,
+									"tc_name": GDATAMES_Settings.terms_and_conditions,
+									"introduction_text": introduction_text
+									})
+
 
 			#for i in range(50):
 			sales_invoice_doc.append("items", sales_invoice_item)
-			sales_invoice_doc.insert()
+			SINV = frappe.get_doc("Sales Invoice", sales_invoice_doc.insert().name)
+			SINV.taxes_and_charges = GDATAMES_Settings.sales_taxes_and_charges_template
+			SINV.tc_name = GDATAMES_Settings.terms_and_conditions
+			SINV.save()
 		else:
 			frappe.throw('Management Server ID ' + mes_id + ' nich einmalig.')
 
