@@ -75,6 +75,7 @@ class Abrechungen(Document):
 									"status": "Draft",
 									"payment_terms_template": GDATAMES_Settings.payment_terms_template,
 									"tc_name": GDATAMES_Settings.terms_and_conditions,
+									"company": frappe.get_doc("Global Defaults").default_company,
 									"introduction_text": introduction_text
 									})
 
