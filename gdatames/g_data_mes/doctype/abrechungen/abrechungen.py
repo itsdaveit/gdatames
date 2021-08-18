@@ -44,7 +44,14 @@ class Abrechungen(Document):
 					mes_id_upper = managementserver.attrib['id'].upper()
 					log = log + 'Server mit ID: ' + managementserver.attrib['id'] + ' mit ' + managementserver.attrib['MaxActiveClients'] + ' aktiven Clients gefunden.\n'
 					counter_MaxActiveClients = counter_MaxActiveClients + int(managementserver.attrib['MaxActiveClients'])
-					self.create_mes_invoice(mes_id_upper, managementserver.attrib['MaxActiveClients'], invoice_month, invoice_year )
+					#Wenn Server keine MaxActiveClients reporten, aber dennoch auftauchen, sind andere Produkte im Spiel
+					#Hierfür haben wir noch keine Behandlung
+					if managementserver.attrib['MaxActiveClients'] == 0 or managementserver.attrib['MaxActiveClients'] == "0":
+						msgtext = "Für Server " + managementserver.attrib['id'] + " wurden keine Clients, aber andere Produkte reported. Bitte prüfen"
+						log += msgtext +"\n"
+						frappe.msgprint(msgtext)
+					else:
+						self.create_mes_invoice(mes_id_upper, managementserver.attrib['MaxActiveClients'], invoice_month, invoice_year )
 				log = log + 'Gesamtanzahl Clients gezählt: ' + str(counter_MaxActiveClients)
 			self.log = log
 			self.status = "Ausgangsrechnungen erstellt"
@@ -54,6 +61,8 @@ class Abrechungen(Document):
 
 
 	def create_mes_invoice(self, mes_id, max_active_clients, invoice_month, invoice_year):
+		if max_active_clients == 0:
+			frappe.throw("Managementserver ")
 		GDATAMES_Settings = frappe.get_doc("GDATAMES Settings")
 		management_server = frappe.get_all('Management Server', {"management_server_id": mes_id})
 		if len(management_server) == 0:
