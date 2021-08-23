@@ -10,6 +10,8 @@ from frappe.utils import file_manager
 import fnmatch
 import xml.etree.ElementTree as ET
 import re
+from erpnext.accounts.party import set_taxes as party_st
+
 
 
 class Abrechungen(Document):
@@ -57,7 +59,7 @@ class Abrechungen(Document):
 			self.status = "Ausgangsrechnungen erstellt"
 			self.save()
 		else:
-			msgprint('Keinen oder mehr als ein ReportEntry im XML-Code gefunden, breche ab.')
+			frappe.msgprint('Keinen oder mehr als ein ReportEntry im XML-Code gefunden, breche ab.')
 
 
 	def create_mes_invoice(self, mes_id, max_active_clients, invoice_month, invoice_year):
@@ -92,8 +94,22 @@ class Abrechungen(Document):
 			#for i in range(50):
 			sales_invoice_doc.append("items", sales_invoice_item)
 			SINV = frappe.get_doc("Sales Invoice", sales_invoice_doc.insert().name)
-			SINV.taxes_and_charges = GDATAMES_Settings.sales_taxes_and_charges_template
-			SINV.tc_name = GDATAMES_Settings.terms_and_conditions
+
+			SINV.taxes_and_charges = party_st(SINV.customer, "Customer", SINV.posting_date, SINV.company)
+			print("tc " + SINV.taxes_and_charges)
+			taxes = frappe.get_doc('Sales Taxes and Charges Template', SINV.taxes_and_charges).taxes
+			for tax in taxes:
+				new_tax = frappe.get_doc({
+					"doctype": "Sales Taxes and Charges",
+					"charge_type": tax.charge_type,
+					"account_head": tax.account_head,
+					"rate": tax.rate,
+					"description": tax.description
+				})
+				SINV.append("taxes", new_tax)
+			
+			tac_doc = frappe.get_doc("Terms and Conditions", GDATAMES_Settings.terms_and_conditions)
+			SINV.terms = terms = tac_doc.terms
 			SINV.save()
 		else:
 			frappe.throw('Management Server ID ' + mes_id + ' nich einmalig.')
