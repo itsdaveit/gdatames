@@ -90,14 +90,16 @@ class Abrechungen(Document):
 									"introduction_text": introduction_text
 									})
 
-
-			#for i in range(50):
 			sales_invoice_doc.append("items", sales_invoice_item)
 			SINV = frappe.get_doc("Sales Invoice", sales_invoice_doc.insert().name)
 
+			# für Kunden gültiges Sales Taxes and Charges Template mit ERPNext eigener Funktion ermitteln
+			# Berücksichtigt die Anwendung von steuerreglen
 			SINV.taxes_and_charges = party_st(SINV.customer, "Customer", SINV.posting_date, SINV.company)
-			print("tc " + SINV.taxes_and_charges)
-			taxes = frappe.get_doc('Sales Taxes and Charges Template', SINV.taxes_and_charges).taxes
+			#entsprechend als Doctype laden
+			taxes = frappe.get_doc("Sales Taxes and Charges Template", SINV.taxes_and_charges).taxes
+			#im Doctype hinterlegte steuern müssen der Rechnung angefügt werden.
+			#Die Berechnung der Beträge geschieht automatisch
 			for tax in taxes:
 				new_tax = frappe.get_doc({
 					"doctype": "Sales Taxes and Charges",
