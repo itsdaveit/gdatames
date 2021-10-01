@@ -15,6 +15,7 @@ from erpnext.accounts.party import set_taxes as party_st
 
 
 class Abrechungen(Document):
+	@frappe.whitelist()
 	def start_processing_zip(self):
 		attached_file = frappe.get_all('File', {"attached_to_doctype": "Abrechungen",
 												"attached_to_name": self.name})
