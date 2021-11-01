@@ -1,0 +1,44 @@
+{
+ "cards_label": "Abrechnungen",
+ "category": "Modules",
+ "charts": [],
+ "creation": "2021-09-12 00:05:24.261206",
+ "developer_mode_only": 0,
+ "disable_user_customization": 0,
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "extends_another_page": 0,
+ "hide_custom": 0,
+ "idx": 0,
+ "is_default": 0,
+ "is_standard": 1,
+ "label": "GDATA MES",
+ "links": [
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "MES Abrechnungen",
+   "link_to": "Abrechungen",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Management Server",
+   "link_to": "Management Server",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2021-10-04 08:05:04.938287",
+ "modified_by": "D.Malinowski@itsdave.de",
+ "module": "G Data MES",
+ "name": "GDATA MES",
+ "owner": "D.Malinowski@itsdave.de",
+ "pin_to_bottom": 0,
+ "pin_to_top": 0,
+ "shortcuts": []
+}
