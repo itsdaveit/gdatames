@@ -30,37 +30,40 @@ class Abrechungen(Document):
 		self.month = invoice_month + "." + invoice_year
 		reportentrys = xml_et.findall('ReportEntry')
 		#Momentan ist die Verarbeitung auf einen Report pro XML Datei begrenzt.
-		if len(reportentrys) == 1:
-			#if self.xml_data != '':
-			#	frappe.utils.file_manager.remove_file(attached_file[0].name)
-			log = 'Beginne mit der Verarbeitung der Reports\n'
-			for reportentry in reportentrys:
-				counter_MaxActiveClients = 0
-				log = log + 'Report für Firma: ' + reportentry.attrib['Company'] + '\n'
-				log = log + 'Abrechnungsmonat: ' + invoice_month + '.' + invoice_year + '\n'
-				log = log + 'G Data Kundenummer: ' + reportentry.attrib['GDCustomerNr'] + '\n'
-				log = log + 'Login Name: ' + reportentry.attrib['Login'] + '\n'
-				log = log + 'Produkt: ' + reportentry.attrib['Product'] + '\n'
-				log = log + 'Gesamtanzahl reporterter Clients: ' + reportentry.attrib['MaxActiveClients'] + '\n'
-				managementservers = reportentry.findall('ManagementServer')
-				for managementserver in managementservers:
-					mes_id_upper = managementserver.attrib['id'].upper()
-					log = log + 'Server mit ID: ' + managementserver.attrib['id'] + ' mit ' + managementserver.attrib['MaxActiveClients'] + ' aktiven Clients gefunden.\n'
-					counter_MaxActiveClients = counter_MaxActiveClients + int(managementserver.attrib['MaxActiveClients'])
-					#Wenn Server keine MaxActiveClients reporten, aber dennoch auftauchen, sind andere Produkte im Spiel
-					#Hierfür haben wir noch keine Behandlung
-					if managementserver.attrib['MaxActiveClients'] == 0 or managementserver.attrib['MaxActiveClients'] == "0":
-						msgtext = "Für Server " + managementserver.attrib['id'] + " wurden keine Clients, aber andere Produkte reported. Bitte prüfen"
-						log += msgtext +"\n"
-						frappe.msgprint(msgtext)
-					else:
-						self.create_mes_invoice(mes_id_upper, managementserver.attrib['MaxActiveClients'], invoice_month, invoice_year )
-				log = log + 'Gesamtanzahl Clients gezählt: ' + str(counter_MaxActiveClients)
-			self.log = log
-			self.status = "Ausgangsrechnungen erstellt"
-			self.save()
-		else:
-			frappe.msgprint('Keinen oder mehr als ein ReportEntry im XML-Code gefunden, breche ab.')
+		#if self.check_report_date():
+		if self.check_report_date():
+			if len(reportentrys) == 1:
+				#if self.xml_data != '':
+				#	frappe.utils.file_manager.remove_file(attached_file[0].name)
+				log = 'Beginne mit der Verarbeitung der Reports\n'
+				for reportentry in reportentrys:
+					counter_MaxActiveClients = 0
+					log = log + 'Report für Firma: ' + reportentry.attrib['Company'] + '\n'
+					log = log + 'Abrechnungsmonat: ' + invoice_month + '.' + invoice_year + '\n'
+					log = log + 'G Data Kundenummer: ' + reportentry.attrib['GDCustomerNr'] + '\n'
+					log = log + 'Login Name: ' + reportentry.attrib['Login'] + '\n'
+					log = log + 'Produkt: ' + reportentry.attrib['Product'] + '\n'
+					log = log + 'Gesamtanzahl reporterter Clients: ' + reportentry.attrib['MaxActiveClients'] + '\n'
+					managementservers = reportentry.findall('ManagementServer')
+					for managementserver in managementservers:
+						mes_id_upper = managementserver.attrib['id'].upper()
+						log = log + 'Server mit ID: ' + managementserver.attrib['id'] + ' mit ' + managementserver.attrib['MaxActiveClients'] + ' aktiven Clients gefunden.\n'
+						counter_MaxActiveClients = counter_MaxActiveClients + int(managementserver.attrib['MaxActiveClients'])
+						#Wenn Server keine MaxActiveClients reporten, aber dennoch auftauchen, sind andere Produkte im Spiel
+						#Hierfür haben wir noch keine Behandlung
+						if managementserver.attrib['MaxActiveClients'] == 0 or managementserver.attrib['MaxActiveClients'] == "0":
+							msgtext = "Für Server " + managementserver.attrib['id'] + " wurden keine Clients, aber andere Produkte reported. Bitte prüfen"
+							log += msgtext +"\n"
+							frappe.msgprint(msgtext)
+						else:
+							self.create_mes_invoice(mes_id_upper, managementserver.attrib['MaxActiveClients'], invoice_month, invoice_year )
+					log = log + 'Gesamtanzahl Clients gezählt: ' + str(counter_MaxActiveClients)
+					self.log = log
+					self.status = "Ausgangsrechnungen erstellt"
+					self.anzahl_clients = str(counter_MaxActiveClients)
+					self.save()
+			else:
+				frappe.msgprint('Keinen oder mehr als ein ReportEntry im XML-Code gefunden, breche ab.')
 
 
 	def create_mes_invoice(self, mes_id, max_active_clients, invoice_month, invoice_year):
@@ -85,12 +88,17 @@ class Abrechungen(Document):
 									"title": "MES " + invoice_month + "." + invoice_year + " " + frappe.get_doc("Customer", doc_management_server.customer).customer_name,
 									"customer": doc_management_server.customer,
 									"status": "Draft",
-									"payment_terms_template": GDATAMES_Settings.payment_terms_template,
+									#"payment_terms_template": GDATAMES_Settings.payment_terms_template,
 									"tc_name": GDATAMES_Settings.terms_and_conditions,
 									"company": frappe.get_doc("Global Defaults").default_company,
 									"introduction_text": introduction_text
 									})
-
+			customer_doc = frappe.get_doc("Customer", doc_management_server.customer )
+			#print(customer_doc.payment_terms)
+			if customer_doc.payment_terms:
+				sales_invoice_doc.payment_terms_template = customer_doc.payment_terms
+			else:
+				sales_invoice_doc.payment_terms_template = GDATAMES_Settings.payment_terms_template
 			sales_invoice_doc.append("items", sales_invoice_item)
 			SINV = frappe.get_doc("Sales Invoice", sales_invoice_doc.insert().name)
 
@@ -125,3 +133,14 @@ class Abrechungen(Document):
 			if fnmatch.fnmatch(name, '*.xml'):
 				files.append(zf.read(name))
 		return files
+	
+	def check_report_date(self):
+		abrechnung_list =  frappe.get_all("Abrechungen", filters={"month": self.month })
+		if len(abrechnung_list) == 0:
+			return True
+		else:
+
+			self.status = "fehlerhaft"
+			self.log ="Zu dem Abrechnungsmonat "+ self.month +" existiert bereits eine Abrechnung ("+abrechnung_list[0]["name"]+"), es wurde keine neue Abrechnung erstellt."     
+            
+			return False
