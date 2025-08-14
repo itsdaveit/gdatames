@@ -21,10 +21,27 @@ class Abrechungen(Document):
 												"attached_to_name": self.name})
 		gdata_zipfile = frappe.utils.file_manager.get_file_path(attached_file[0].name)
 		zip_xml_content =  self.extract_xml_from_zip(gdata_zipfile)
-		mes_xml = zip_xml_content[0]
+		# Suche nach der detailed XML-Datei oder verwende die erste XML-Datei (für alte Dateien)
+		detailed_xml = None
+		first_xml = None
+		
+		for xml_file in zip_xml_content:
+			if first_xml is None:
+				first_xml = xml_file['content']
+			if 'detailed' in xml_file['name']:
+				detailed_xml = xml_file['content']
+				break
+		
+		# Verwende detailed XML falls vorhanden, sonst die erste XML-Datei
+		if detailed_xml is not None:
+			mes_xml = detailed_xml
+		elif first_xml is not None:
+			mes_xml = first_xml
+		else:
+			frappe.throw('Keine XML-Datei in der ZIP gefunden')
 		self.xml_data = mes_xml
 		xml_et = ET.fromstring(self.xml_data)
-		date = re.search('(?<=files/)(\d\d)_(\d\d\d\d)_mes_usage_export.zip', gdata_zipfile)
+		date = re.search('(?<=files/)(\d{1,2})_(\d\d\d\d)(?:_mes)?_usage_export.zip', gdata_zipfile)
 		invoice_month = date.group(1)
 		invoice_year = date.group(2)
 		self.month = invoice_month + "." + invoice_year
@@ -131,7 +148,10 @@ class Abrechungen(Document):
 		files = []
 		for name in zf.namelist():
 			if fnmatch.fnmatch(name, '*.xml'):
-				files.append(zf.read(name))
+				files.append({
+					'name': name,
+					'content': zf.read(name)
+				})
 		return files
 	
 	def check_report_date(self):
