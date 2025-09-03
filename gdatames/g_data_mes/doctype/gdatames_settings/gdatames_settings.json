@@ -1,10 +1,12 @@
 {
+ "actions": [],
  "creation": "2017-12-31 16:37:02.320865",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "introduction_text",
+  "introduction_text_mxdr",
   "payment_terms_template",
   "terms_and_conditions"
  ],
@@ -25,10 +27,16 @@
    "fieldtype": "Link",
    "label": "Terms and Conditions",
    "options": "Terms and Conditions"
+  },
+  {
+   "fieldname": "introduction_text_mxdr",
+   "fieldtype": "Text Editor",
+   "label": "Introduction Text MXDR"
   }
  ],
  "issingle": 1,
- "modified": "2021-08-23 09:09:44.566813",
+ "links": [],
+ "modified": "2025-09-03 11:09:24.374706",
  "modified_by": "Administrator",
  "module": "G Data MES",
  "name": "GDATAMES Settings",
@@ -48,5 +56,6 @@
  "quick_entry": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }
